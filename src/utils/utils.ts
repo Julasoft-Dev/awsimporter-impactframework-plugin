@@ -113,6 +113,14 @@ export const convertSecondsToMS = (value: number): number => {
   return value * 1000;
 };
 
+/**
+  The following function getInstanceTypes parse most of the data
+  that is present in CloudWatch metrics, including: InstanceId, ImageId,
+  InstanceType, path, device, cpu, etc.
+  This function is not used anymore because the InstanceType now
+  is obtained from the instance instead of the Metrics
+**/
+
 export const getInstanceTypes = (data: unknown[]) => {
   const instanceTypes = new Set();
   data.forEach(item => {
