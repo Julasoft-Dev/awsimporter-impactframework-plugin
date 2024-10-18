@@ -105,8 +105,8 @@ export const AwsImporter = (
           value => {
             return {
               ...input,
-              instanceId: instance.InstanceId,
-              imageId: instance.ImageId,
+              'instance-id': instance.InstanceId,
+              'image-id': instance.ImageId,
               location: region,
               geolocation: getGeolocation(region),
               'cloud/vendor': 'aws',
