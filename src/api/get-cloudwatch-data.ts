@@ -1,10 +1,6 @@
 import {PluginParams} from '../interfaces';
 import {AWSCredentials, Ec2Machine, YourGlobalConfig} from '../types';
-import {
-  convertSecondsToMS,
-  getFinalGroupedItems,
-  getInstanceTypes,
-} from '../utils/utils';
+import {convertSecondsToMS, getFinalGroupedItems} from '../utils/utils';
 import {
   CloudWatchClient,
   GetMetricStatisticsCommand,
@@ -103,7 +99,6 @@ export const getCloudWatchData = async (
 
   // It creates the groups with the received data
   const groupedItemsArray = getFinalGroupedItems(resolvedMetricData);
-  const instanceTypes: unknown[] = getInstanceTypes(listMetricsCloudWatch);
 
-  return {groupedItemsArray, instanceTypes};
+  return {groupedItemsArray};
 };
