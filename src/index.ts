@@ -90,44 +90,54 @@ export const AwsImporter = (
     });
 
     const outputs = inputs.map(async input => {
-      const cloudWatchData = await getCloudWatchData(
-        input,
-        globalConfig,
-        instances,
-        region,
-        credentials
-      );
+      // Mapping instances to get a result for each instance and input
+      // in case that exists more than one instance with the same tag
+      const instanceOutput = instances.map(async instance => {
+        const cloudWatchData = await getCloudWatchData(
+          input,
+          globalConfig,
+          instances,
+          region,
+          credentials
+        );
 
-      const allCloudWatchData = cloudWatchData.groupedItemsArray.map(value => {
-        return {
-          ...input,
-          location: region,
-          geolocation: getGeolocation(region),
-          'cloud/vendor': 'aws',
-          'cloud/service': 'ec2',
-          'cloud/instance-type': cloudWatchData.instanceTypes[0],
-          ...value,
-        };
+        const allCloudWatchData = cloudWatchData.groupedItemsArray.map(
+          value => {
+            return {
+              ...input,
+              'instance-id': instance.InstanceId,
+              'image-id': instance.ImageId,
+              location: region,
+              geolocation: getGeolocation(region),
+              'cloud/vendor': 'aws',
+              'cloud/service': 'ec2',
+              'cloud/instance-type': instance.InstanceType,
+              ...value,
+            };
+          }
+        );
+
+        const diskData = volumesData?.flatMap(value => {
+          return {
+            ...input,
+            location: region,
+            geolocation: getGeolocation(region),
+            'cloud/vendor': 'aws',
+            'cloud/service': 'ebs',
+            ...value,
+          };
+        });
+
+        const awsService: string[] =
+          globalConfig['aws-importer']['aws-services'].split(', ');
+
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        // We're using the aws-services to determine the output data if it will contain based on the ec2, ebs or both
+        return getFinalData(awsService, allCloudWatchData, diskData);
       });
-
-      const diskData = volumesData?.flatMap(value => {
-        return {
-          ...input,
-          location: region,
-          geolocation: getGeolocation(region),
-          'cloud/vendor': 'aws',
-          'cloud/service': 'ebs',
-          ...value,
-        };
-      });
-
-      const awsService: string[] =
-        globalConfig['aws-importer']['aws-services'].split(', ');
-
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      // We're using the aws-services to determine the output data if it will contain based on the ec2, ebs or both
-      return getFinalData(awsService, allCloudWatchData, diskData);
+      const resolvedInstanceOutputs = await Promise.all(instanceOutput);
+      return resolvedInstanceOutputs.flat();
     });
 
     const resolvedOutputs = await Promise.all(outputs);
